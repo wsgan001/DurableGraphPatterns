@@ -1,4 +1,4 @@
-package utils;
+package utils.yt;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -11,12 +11,25 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-public class datasetGenerator {
-	private static String src = "/tempweb/files/yt_graph";
+/**
+ * Generate labels per time instant for given dataset
+ * @author ksemer
+ *
+ */
+public class LabelGenerator {
+	// input graph
+	private static String dataset = "/tempweb/files/yt_graph";
+	
+	// path for labels
+	private static String labels_output = "/tempweb/files/yt_label_";
+	
+	// times that a label will remain the same
+	private static int times = 4;
+	
 	private static Map<Integer, List<Integer>> nodes;
 	
 	public static void main(String[] args) throws IOException {
-		BufferedReader br = new BufferedReader(new FileReader(src));
+		BufferedReader br = new BufferedReader(new FileReader(dataset));
 		String line = null;
 		int n1, n2;
 		
@@ -50,25 +63,30 @@ public class datasetGenerator {
 		createDataset(100);
 	}
 
-	private static void createDataset(int numberOflabels) throws IOException {
-		System.out.println("Running for number of labels: " + numberOflabels);
+	/**
+	 * Create sizeOflabels for the dataset interval
+	 * @param numberOflabels
+	 * @throws IOException
+	 */
+	private static void createDataset(int sizeOflabels) throws IOException {
+		System.out.println("Running size of labels: " + sizeOflabels);
 		
-		FileWriter w = new FileWriter("/tempweb/files/yt_label_" + numberOflabels);
-		zipf zipf = new zipf(numberOflabels, 1);
-		int[] numberOfnodes = new int[numberOflabels + 1];
+		FileWriter w = new FileWriter(labels_output + sizeOflabels);
+		zipf zipf = new zipf(sizeOflabels, 1);
+		int[] numberOfnodes = new int[sizeOflabels + 1];
+		
 		// keeps all nodes
 		List<Integer> arr = new ArrayList<>(nodes.keySet());
 
 		// how many nodes should have this attribute
-		for (int i = 1; i <= numberOflabels; i++)
+		for (int i = 1; i <= sizeOflabels; i++)
 			numberOfnodes[i] = (int) (zipf.getProbability(i) * nodes.size());
 		
 		// since we call it many times
 		for (int key : nodes.keySet())
 			nodes.get(key).clear();
 				
-		// ana poses fores na alazei
-		int times = 4;
+	
 		for (int j = 0; j < times; j++) {
 
 			// shuffle nodes
@@ -76,6 +94,7 @@ public class datasetGenerator {
 			
 			int attr = 1, counter = 0;
 			for (int i = 0; i < arr.size(); i++) {
+				
 				// get node arr.get(i) and add attribute attr
 				nodes.get(arr.get(i)).add(attr);
 				
