@@ -1,4 +1,4 @@
-package queries;
+package utils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,9 +16,10 @@ import system.Config;
  * Pattern graph query generator
  * @author ksemer
  */
-public class queryGenerator {
+public class QueryGenerator {
 	//===============================================
 	private static Map<Node, Integer> labels;
+	private static int patternGraphID = 0;
     public static Set<Node> hasBeenVisited;
 	//===============================================
 
@@ -84,7 +85,7 @@ public class queryGenerator {
 	 * @return
 	 */
 	public static PatternGraph getQuery(int size) {
-		PatternGraph pg = new PatternGraph();
+		PatternGraph pg = new PatternGraph(patternGraphID++);
 		PatternNode pn1, pn2;
 		int count = 0;
 		Map<Node, Integer> map = new HashMap<>();

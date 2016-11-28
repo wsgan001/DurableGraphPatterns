@@ -22,7 +22,7 @@ import java.util.Map.Entry;
  */
 public class CreateDBLPGraph {
 	public static final int currentYear = 2016;
-	private final String PATH_DBLP_INPUT = "dblp.txt";
+	private final String PATH_DBLP_INPUT = "C:\\Users\\ksemer\\workspace\\tkde_data\\dblp.txt";
 	private final String PATH_DBLP_AUTHORS_MAP = "dblp_authors_ids";
 	private final String PATH_DBLP_GRAPH = "dblp_graph";
 	private final String PATH_DBLP_AUTHORS_CONFERENCES = "dblp_authors_conf";
@@ -31,7 +31,8 @@ public class CreateDBLPGraph {
 	private final String PATH_DBLP_CONFERENCES_MAP = "dblp_conferences_ids";
 
 	// Create graph from specific conferences
-	private final Set<String> CONFERENCES = new HashSet<String>(Arrays.asList());
+	private final Set<String> CONFERENCES = new HashSet<String>(Arrays.asList("ICDE", "VLDB", "EDBT",
+			"SIGMOD Conference", "KDD", "KDD Cup", "WWW", "SIGIR", "CIKM", "SDM", "ICDM", "WWW (Companion Volume)"));
 
 	// is used to replace authors names with a unique id.
 	private HashMap<String, Author> allAuthors = new HashMap<>();
@@ -69,7 +70,6 @@ public class CreateDBLPGraph {
 				// map author to a unique id
 				if (!allAuthors.containsKey(author)) {
 					allAuthors.put(author, new Author(id));
-					w_authors.write(id + "\t" + author + "\n");
 					id++;
 				}
 			} else if (line.contains("Title: ")) {
@@ -82,6 +82,18 @@ public class CreateDBLPGraph {
 			}
 		}
 		input.close();
+
+		// for the last publication
+		writeF(booktitle, title, year, authors);
+
+		// write only authors that published a paper in CONFERENCES
+		for (Entry<String, Author> entry : allAuthors.entrySet()) {
+			Author author = entry.getValue();
+
+			if (authors_f.contains(author))
+				w_authors.write(author.getID() + "\t" + entry.getKey() + "\n");
+		}
+
 		w_graph.close();
 		w_authors.close();
 		w_authors_conf.close();
@@ -91,6 +103,8 @@ public class CreateDBLPGraph {
 
 		System.out.println("DBLP graph is generated!");
 	}
+
+	Set<Author> authors_f = new HashSet<>();
 
 	/**
 	 * Write dblp graph and authors conferences to files
@@ -109,10 +123,14 @@ public class CreateDBLPGraph {
 			for (int i = 0; i < authors.size(); i++) {
 				Author authorA = allAuthors.get(authors.get(i));
 				w_authors_conf.write(authorA.getID() + "\t" + booktitle + "\n");
+				authors_f.add(authorA);
 
 				for (int j = i + 1; j < authors.size(); j++) {
+					Author authorB = allAuthors.get(authors.get(j));
+					authors_f.add(authorB);
+
 					// write graph edge
-					w_graph.write(authorA.getID() + "\t" + allAuthors.get(authors.get(j)).getID() + "\t" + year + "\n");
+					w_graph.write(authorA.getID() + "\t" + authorB.getID() + "\t" + year + "\n");
 				}
 
 				// increase authorA publications count for this year
@@ -130,12 +148,16 @@ public class CreateDBLPGraph {
 	 */
 	private void writeAuthorsPublicationsPerYear() throws IOException {
 		FileWriter w_author_attr = new FileWriter(PATH_DBLP_GRAPH_ATTRIBUTES, false);
-		
+
 		w_author_attr.write("# Publications_count labels\n");
-		
+
 		// for each author
 		for (Entry<String, Author> entry : allAuthors.entrySet()) {
 			Author author = entry.getValue();
+
+			if (!authors_f.contains(author))
+				continue;
+
 			int array[] = author.getStatus();
 
 			w_author_attr.write(author.getID() + "|");
@@ -149,8 +171,9 @@ public class CreateDBLPGraph {
 	}
 
 	/**
-	 * Write for each author the conferences and the years 
-	 * that he/she published a paper
+	 * Write for each author the conferences and the years that he/she published
+	 * a paper
+	 * 
 	 * @throws IOException
 	 * 
 	 */
