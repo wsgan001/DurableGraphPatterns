@@ -32,7 +32,9 @@ public class CreateDBLPGraph {
 
 	// Create graph from specific conferences
 	private final Set<String> CONFERENCES = new HashSet<String>(Arrays.asList("ICDE", "VLDB", "EDBT",
-			"SIGMOD Conference", "KDD", "KDD Cup", "WWW", "SIGIR", "CIKM", "SDM", "ICDM", "WWW (Companion Volume)"));
+			"SIGMOD Conference", "KDD", "WWW", "SIGIR", "FOCS", "STOC", "SODA", "CIKM", "SDM", "ICDM",
+			"SIGCOMM", "SIGMETRICS", "SIGGRAPH", "ICALP", "OSDI", "SOSP", "USENIX"));
+	
 
 	// is used to replace authors names with a unique id.
 	private HashMap<String, Author> allAuthors = new HashMap<>();

@@ -32,7 +32,7 @@ public class Storage {
 			out.writeObject(object);
 			out.close();
 			fileOut.close();
-			System.out.printf("Serialized data is saved in " + fileName);
+			System.out.println("Serialized data is saved in " + fileName);
 		} catch (IOException i) {
 			i.printStackTrace();
 		}
