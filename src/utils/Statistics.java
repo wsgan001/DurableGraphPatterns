@@ -11,15 +11,15 @@ public class Statistics {
 	public static String dataset = "";
 
 	public static void main(String[] args) throws Exception {
-		
+
 		Config.loadConfigs();
-		
+
 		Config.STORE_OBJECT = false;
 		Config.LOAD_OBJECT = false;
 		Config.TINLA_ENABLED = false;
 		Config.TIPLA_ENABLED = false;
 		Config.CTINLA_ENABLED = false;
-		
+
 		Config.PATH_DATASET = "/home/ksemer/workspaces/tkde_data/protein/pcms/PCMS.gfu";
 
 		String dataset = Config.PATH_DATASET.toLowerCase();
@@ -31,23 +31,20 @@ public class Statistics {
 		}
 		// for yt dataset
 		else if (dataset.contains("yt"))
-			// TODO number of changes for yt
-			lvg = new LoaderYT(9).loadDataset();
-		// for proteins
-		else
+			lvg = new LoaderYT().loadDataset();
+		else // for proteins
 			lvg = new LoaderProteins().loadDataset();
-		
-		
+
 		System.out.println("Nodes: " + lvg.size());
 		int edges = 0;
-		
+
 		for (Node n : lvg.getNodes()) {
-			edges+= n.getAdjacency().size();
+			edges += n.getAdjacency().size();
 		}
-		
+
 		if (!Config.ISDIRECTED)
-			edges/= 2;
-		
+			edges /= 2;
+
 		System.out.println("Edges: " + edges);
 	}
 }
