@@ -16,6 +16,9 @@ import java.io.ObjectOutputStream;
  *
  */
 public class Storage {
+	// =================================================================
+	private static final long MEGABYTE = 1024L * 1024L;
+	// =================================================================
 
 	/**
 	 * Serialize the given object to given file name
@@ -87,5 +90,15 @@ public class Storage {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	/**
+	 * Convert bytes to megabytes
+	 * 
+	 * @param bytes
+	 * @return
+	 */
+	public static String bytesToMegabytes(long bytes) {
+		return (bytes / MEGABYTE) + " (mb)";
 	}
 }
