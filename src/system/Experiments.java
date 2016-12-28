@@ -1,4 +1,4 @@
-package experiments;
+package system;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,31 +14,14 @@ import algorithm.DurableMatching;
 import algorithm.DurableTopkMatching;
 import graph.pattern.PatternGraph;
 import graph.version.Graph;
-import graph.version.Node;
 import graph.version.loader.LoaderDBLP;
 import graph.version.loader.LoaderProteins;
 import graph.version.loader.LoaderYT;
-import system.Config;
-import utils.QueryGenerator;
 
-/**
- * Experiment class
- * 
- * @author ksemer
- */
 public class Experiments {
 	private static String out;
-	private static boolean runTopk = false;
-	private static boolean runMost = true;
-
-	public static boolean runRandomQueries = true;
-	private static int randomIterations = 20;
-
-	// only used in random queries and the division with randomIterations should
-	// be zero
-	private static int NUMBER_OF_THREADS = 5;
-
-	private static List<PatternGraph> queries = new ArrayList<>();
+	private static boolean runTopk = true;
+	private static boolean runMost = false;
 
 	/**
 	 * Main
@@ -53,40 +35,15 @@ public class Experiments {
 		Config.K = 10;
 		Config.ADAPTIVE_THETA = 0.5;
 		out = Config.PATH_OUTPUT;
-
-		if (!runRandomQueries)
-			runIndex();
-		else
-			runRandomIndex();
-	}
-
-	private static void runRandomIndex() throws Exception {
-		Graph lvg = loadGraph();
-		List<Node> allNodes = new ArrayList<>(lvg.getNodes());
-		Random r = new Random();
-
-		for (int i = 0; i < randomIterations; i++) {
-			PatternGraph pg = null;
-			System.out.println("Query generation iteration: " + (i + 1));
-
-			for (int size = 2; size <= 6; size++) {
-				int j = r.nextInt(lvg.size() - 1);
-				Node node = allNodes.get(j);
-
-				if (QueryGenerator.dfs(node, size)) {
-					// get random query as a pattern graph
-					pg = QueryGenerator.getQuery(size);
-					queries.add(pg);
-				} else
-					size--;
-			}
-		}
-
-		System.out.println("Queries Generation is finished!!!");
 		runIndex();
 	}
 
 	private static void runIndex() throws Exception {
+		Config.TINLA_ENABLED = false;
+		Config.CTINLA_ENABLED = false;
+		Config.TIPLA_ENABLED = false;
+
+		runQ();
 
 		Config.TINLA_ENABLED = true;
 		Config.CTINLA_ENABLED = false;
@@ -110,18 +67,12 @@ public class Experiments {
 
 		Config.TINLA_ENABLED = false;
 		Config.CTINLA_ENABLED = false;
-		Config.TIPLA_ENABLED = false;
-
-		runQ();
-
-		Config.TINLA_ENABLED = false;
-		Config.CTINLA_ENABLED = false;
 		Config.TIPLA_ENABLED = true;
 
 		runQ();
 	}
 
-	private static Graph loadGraph() throws Exception {
+	public static void runQ() throws Exception {
 		String dataset = Config.PATH_DATASET.toLowerCase();
 		Graph lvg = null;
 
@@ -137,12 +88,6 @@ public class Experiments {
 			lvg = new LoaderProteins().loadDataset();
 		}
 
-		return lvg;
-	}
-
-	private static void runQ() throws Exception {
-		Graph lvg = loadGraph();
-
 		if (runTopk)
 			runQ(lvg, true, false);
 
@@ -150,7 +95,7 @@ public class Experiments {
 			runQ(lvg, false, true);
 	}
 
-	private static void runQ(Graph lvg, boolean runTop, boolean runMost) throws Exception {
+	public static void runQ(Graph lvg, boolean runTop, boolean runMost) throws Exception {
 		String dataset = Config.PATH_DATASET.toLowerCase();
 		Config.RUN_TOPK_QUERIES = runTop;
 		Config.RUN_DURABLE_QUERIES = runMost;
@@ -160,48 +105,28 @@ public class Experiments {
 
 			Config.MAX_RANKING_ENABLED = true;
 			Config.ADAPTIVE_RANKING_ENABLED = false;
-
-			if (runRandomQueries)
-				run_random(lvg, "dblp");
-			else {
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_prof.txt", "prof");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_senior.txt", "senior");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_junior.txt", "junior");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_begin.txt", "begin");
-			}
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_prof.txt", "prof");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_senior.txt", "senior");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_junior.txt", "junior");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_begin.txt", "begin");
 
 			Config.MAX_RANKING_ENABLED = false;
 			Config.ADAPTIVE_RANKING_ENABLED = true;
-
-			if (runRandomQueries)
-				run_random(lvg, "dblp");
-			else {
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_prof.txt", "prof");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_senior.txt", "senior");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_junior.txt", "junior");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_begin.txt", "begin");
-			}
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_prof.txt", "prof");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_senior.txt", "senior");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_junior.txt", "junior");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_begin.txt", "begin");
 		} else if (dataset.contains("yt")) { // youtube
 
 			Config.MAX_RANKING_ENABLED = true;
 			Config.ADAPTIVE_RANKING_ENABLED = false;
-
-			if (runRandomQueries)
-				run_random(lvg, "yt");
-			else {
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least.txt", "least");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
-			}
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least.txt", "least");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
 
 			Config.MAX_RANKING_ENABLED = false;
 			Config.ADAPTIVE_RANKING_ENABLED = true;
-
-			if (runRandomQueries)
-				run_random(lvg, "yt");
-			else {
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least.txt", "least");
-				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
-			}
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least.txt", "least");
+			run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
 		} else { // proteins
 
 			String[] x = dataset.split("/");
@@ -221,17 +146,17 @@ public class Experiments {
 		}
 	}
 
-	private static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
+	public static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
 
 		for (Entry<String, Integer> entry : LoaderProteins.labels.entrySet()) {
 			int label = entry.getValue();
-
+			
 			ExecutorService executor = Executors.newCachedThreadPool();
 			List<Callable<?>> callables = new ArrayList<>();
 
 			for (int i = 2; i <= 6; i++) {
 				BitSet iQ;
-				Config.PATH_OUTPUT = out + outputPr + "/" + entry.getKey() + "-";
+				Config.PATH_OUTPUT = out + outputPr + "1/" + entry.getKey() + "-";
 				iQ = new BitSet(Config.MAXIMUM_INTERVAL);
 				iQ.set(0, Config.MAXIMUM_INTERVAL, true);
 
@@ -249,7 +174,7 @@ public class Experiments {
 						pg.addEdge(q, k);
 					}
 				}
-
+				
 				if (Config.RUN_DURABLE_QUERIES) {
 
 					if (Config.MAX_RANKING_ENABLED)
@@ -274,7 +199,7 @@ public class Experiments {
 						callables.add(setCallableTopkQ(lvg, pg, iQ, Config.ZERO_RANKING));
 				}
 			}
-
+			
 			for (Callable<?> c : callables)
 				executor.submit(c);
 
@@ -296,7 +221,7 @@ public class Experiments {
 		runtime.gc();
 	}
 
-	private static void run(Graph lvg, String queryInput, String outputPr) throws Exception {
+	public static void run(Graph lvg, String queryInput, String outputPr) throws Exception {
 		BitSet iQ;
 		Config.PATH_OUTPUT = out + outputPr + "/";
 		iQ = new BitSet(Config.MAXIMUM_INTERVAL);
@@ -384,69 +309,6 @@ public class Experiments {
 		while (!executor.isTerminated()) {
 		}
 
-		System.out.println("-----------------");
-		executor.shutdownNow();
-		System.out.println("shutdown finished");
-		lvg = null;
-
-		Runtime runtime = Runtime.getRuntime();
-
-		// Run the garbage collector
-		runtime.gc();
-	}
-
-	private static void run_random(Graph lvg, String outputPr) throws Exception {
-		PatternGraph pg = null;
-		BitSet iQ = new BitSet(Config.MAXIMUM_INTERVAL);
-		Config.PATH_OUTPUT = out + outputPr + "/";
-		iQ.set(0, Config.MAXIMUM_INTERVAL, true);
-
-		List<Callable<?>> callables = new ArrayList<>();
-		ExecutorService executor = Executors.newCachedThreadPool();
-
-		for (int i = 0; i < queries.size(); i++) {
-			pg = queries.get(i);
-
-			if (Config.RUN_DURABLE_QUERIES) {
-
-				if (Config.MAX_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.MAX_RANKING));
-
-				if (Config.ADAPTIVE_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.ADAPTIVE_RANKING));
-
-				if (Config.ZERO_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.ZERO_RANKING));
-			}
-
-			if (Config.RUN_TOPK_QUERIES) {
-
-				if (Config.MAX_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MAX_RANKING));
-
-				if (Config.ADAPTIVE_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.ADAPTIVE_RANKING));
-
-				if (Config.ZERO_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.ZERO_RANKING));
-			}
-
-			// use 5 threads
-			if (callables.size() == NUMBER_OF_THREADS) {
-				for (Callable<?> c : callables)
-					executor.submit(c);
-
-				executor.shutdown();
-
-				while (!executor.isTerminated()) {
-				}
-
-				executor = Executors.newCachedThreadPool();
-				callables.clear();
-			}
-		}
-
-		System.out.println("-----------------");
 		executor.shutdownNow();
 		System.out.println("shutdown finished");
 		lvg = null;
