@@ -22,6 +22,11 @@ import graph.version.loader.LoaderYT;
 import system.Config;
 import utils.QueryGenerator;
 
+/**
+ * Experiment class
+ * 
+ * @author ksemer
+ */
 public class Experiments {
 	private static String out;
 	public static boolean runRandomQueries = true;

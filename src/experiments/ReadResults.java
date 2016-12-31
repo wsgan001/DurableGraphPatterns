@@ -1,3 +1,4 @@
+package experiments;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -18,6 +19,7 @@ public class ReadResults {
 	private static boolean most = true, topk = false;
 
 	public static void main(String[] args) throws IOException {
+		// readForConf(mainDir);
 		randomResultsRetrieval(mainDir + "dblp_pub_random_topk");
 		// resultsRetrieval(mainDir + "most_durable/begin/", 1, 5);
 		// resultsRetrieval(mainDir + "most_durable/junior/", 1, 5);
@@ -34,7 +36,7 @@ public class ReadResults {
 		// resultsRetrieval(mainDir + "topk/least/", 1, 5);
 	}
 
-	private static void readForConf(String path) throws IOException {
+	public static void readForConf(String path) throws IOException {
 		List<Integer> labels = new ArrayList<Integer>(Arrays.asList(1664, 163, 2770, 4654, 5887, 4169, 7523, 6066, 5668,
 				4640, 5207, 4806, 1945, 5200, 1872, 7741, 1390, 1872, 5292));
 
@@ -51,7 +53,6 @@ public class ReadResults {
 			prefix = "_tila_r=" + rankingDuration;
 
 		for (int l : labels) {
-			// System.out.print(l);
 
 			for (int i = 2; i <= 6; i++) {
 				List<Integer> res = readFile(path + file + l + "0000" + i + prefix, false);
@@ -84,6 +85,7 @@ public class ReadResults {
 		int[] vila = new int[qsize], tinla1 = new int[qsize], tinla2 = new int[qsize], ctinla1 = new int[qsize],
 				ctinla2 = new int[qsize], tipla = new int[qsize];
 		int[] vila_c = new int[qsize], tinla1_c = new int[qsize], tinla2_c = new int[qsize], ctinla1_c = new int[qsize],
+				ctinla2_c = new int[qsize], tipla_c = new int[qsize];
 		List<Integer> res;
 		String name;
 		int time, size;
@@ -130,6 +132,8 @@ public class ReadResults {
 		System.out.println("Q Size\tVILA\tTINLA(1)\tTINLA(2)\tCTINLA(1)\tCTINLA(2)\tTIPLA\t");
 		for (int i = 1; i < qsize; i++) {
 			System.out.println((i + 1) + "\t" + (vila[i] / vila_c[i]) + "\t" + (tinla1[i] / tinla1_c[i]) + "\t"
+					+ (tinla2[i] / tinla2_c[i]) + "\t" + (ctinla1[i] / ctinla1_c[i]) + "\t"
+					+ (ctinla2[i] / ctinla2_c[i]) + "\t" + (tipla[i] / tipla_c[i]));
 		}
 
 	}
