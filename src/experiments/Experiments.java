@@ -22,23 +22,15 @@ import graph.version.loader.LoaderYT;
 import system.Config;
 import utils.QueryGenerator;
 
-/**
- * Experiment class
- * 
- * @author ksemer
- */
 public class Experiments {
 	private static String out;
-	private static boolean runTopk = false;
-	private static boolean runMost = true;
-
 	public static boolean runRandomQueries = true;
-	private static int randomIterations = 20;
-
+	private static int randomIterations = 10;
 	// only used in random queries and the division with randomIterations should
 	// be zero
 	private static int NUMBER_OF_THREADS = 5;
-
+	private static boolean runTopk = false;
+	private static boolean runMost = true;
 	private static List<PatternGraph> queries = new ArrayList<>();
 
 	/**
@@ -50,7 +42,7 @@ public class Experiments {
 	public static void main(String[] args) throws Exception {
 		Config.loadConfigs();
 
-		Config.K = 10;
+		Config.K = 5;
 		Config.ADAPTIVE_THETA = 0.5;
 		out = Config.PATH_OUTPUT;
 
@@ -140,7 +132,7 @@ public class Experiments {
 		return lvg;
 	}
 
-	private static void runQ() throws Exception {
+	public static void runQ() throws Exception {
 		Graph lvg = loadGraph();
 
 		if (runTopk)
@@ -150,7 +142,7 @@ public class Experiments {
 			runQ(lvg, false, true);
 	}
 
-	private static void runQ(Graph lvg, boolean runTop, boolean runMost) throws Exception {
+	public static void runQ(Graph lvg, boolean runTop, boolean runMost) throws Exception {
 		String dataset = Config.PATH_DATASET.toLowerCase();
 		Config.RUN_TOPK_QUERIES = runTop;
 		Config.RUN_DURABLE_QUERIES = runMost;
@@ -211,17 +203,25 @@ public class Experiments {
 			Config.ADAPTIVE_RANKING_ENABLED = false;
 			// run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_" +
 			// dataName + ".txt", dataName);
-			run_for_proteins(lvg, dataName);
 
-			// Config.MAX_RANKING_ENABLED = true;
-			// Config.ADAPTIVE_RANKING_ENABLED = false;
+			if (runRandomQueries)
+				run_random(lvg, dataName);
+			else
+				run_for_proteins(lvg, dataName);
+
+			Config.MAX_RANKING_ENABLED = false;
+			Config.ADAPTIVE_RANKING_ENABLED = true;
+
 			// run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_" +
 			// dataName + ".txt", dataName);
-			// run_for_proteins(lvg, dataName);
+			if (runRandomQueries)
+				run_random(lvg, dataName);
+			else
+				run_for_proteins(lvg, dataName);
 		}
 	}
 
-	private static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
+	public static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
 
 		for (Entry<String, Integer> entry : LoaderProteins.labels.entrySet()) {
 			int label = entry.getValue();

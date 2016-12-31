@@ -15,6 +15,8 @@ import algorithm.DurableTopkMatching;
 import graph.pattern.PatternGraph;
 import graph.version.Graph;
 import graph.version.loader.LoaderDBLP;
+import graph.version.loader.LoaderProteins;
+import graph.version.loader.LoaderYT;
 import system.Config;
 
 /**
@@ -34,7 +36,7 @@ public class WithConf {
 	public static void main(String[] args) throws Exception {
 		Config.loadConfigs();
 		BitSet iQ = new BitSet();
-		Graph lvg = new LoaderDBLP().loadDataset();
+		Graph lvg = loadGraph();
 		iQ.set(0, Config.MAXIMUM_INTERVAL);
 
 		for (int l : LABELS) {
@@ -70,6 +72,25 @@ public class WithConf {
 			while (!executor.isTerminated()) {
 			}
 		}
+	}
+
+	private static Graph loadGraph() throws Exception {
+		String dataset = Config.PATH_DATASET.toLowerCase();
+		Graph lvg = null;
+
+		// for dblp dataset
+		if (dataset.contains("dblp")) {
+			Config.MAXIMUM_INTERVAL = 58;
+			lvg = new LoaderDBLP().loadDataset();
+		} else if (dataset.contains("yt")) { // youtube
+			Config.MAXIMUM_INTERVAL = 37;
+			lvg = new LoaderYT().loadDataset();
+		} else {
+			// proteins
+			lvg = new LoaderProteins().loadDataset();
+		}
+
+		return lvg;
 	}
 
 	/**
