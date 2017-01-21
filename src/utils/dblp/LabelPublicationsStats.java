@@ -11,7 +11,7 @@ import java.io.IOException;
  *
  */
 public class LabelPublicationsStats {
-	private static String dataset = "/home/ksemer/workspaces/tkde_data/dblp_all_dataset/dblp_publications_labels";
+	private static String dataset = "/home/ksemer/workspaces/tkde_data/dblp/dblp_publications_labels";
 	private static int MAX_INTERVAL = 58;
 
 	private static final int BEGINNER = 2;
@@ -34,6 +34,9 @@ public class LabelPublicationsStats {
 
 			for (int i = 0; i < publicationsPerYear.length; i++) {
 				number = Integer.parseInt(publicationsPerYear[i]);
+
+				if (number == 0)
+					continue;
 
 				if (number <= BEGINNER)
 					ranking[i][0]++;
