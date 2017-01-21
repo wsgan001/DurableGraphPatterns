@@ -15,14 +15,15 @@ import algorithm.DurableTopkMatching;
 import graph.pattern.PatternGraph;
 import graph.version.Graph;
 import graph.version.loader.LoaderDBLP;
+import graph.version.loader.LoaderProteins;
+import graph.version.loader.LoaderYT;
 import system.Config;
 
 /**
  * Experiment for DBLP_C
- * 
  * @author ksemer
  */
-public class DBLP_C {
+public class WithConf {
 
 	// only used in random queries and the division with randomIterations should
 	// be zero
@@ -81,6 +82,12 @@ public class DBLP_C {
 		if (dataset.contains("dblp")) {
 			Config.MAXIMUM_INTERVAL = 58;
 			lvg = new LoaderDBLP().loadDataset();
+		} else if (dataset.contains("yt")) { // youtube
+			Config.MAXIMUM_INTERVAL = 37;
+			lvg = new LoaderYT().loadDataset();
+		} else {
+			// proteins
+			lvg = new LoaderProteins().loadDataset();
 		}
 
 		return lvg;

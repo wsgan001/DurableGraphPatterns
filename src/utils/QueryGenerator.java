@@ -23,7 +23,7 @@ public class QueryGenerator {
 	// ===============================================
 	private static Map<Node, Integer> labels;
 	private static int patternGraphID = 0;
-	private static Set<Node> hasBeenVisited;
+	public static Set<Node> hasBeenVisited;
 	// ===============================================
 
 	/**
@@ -94,7 +94,6 @@ public class QueryGenerator {
 	 * @return
 	 */
 	public static PatternGraph getQuery(int size) {
-
 		PatternGraph pg = new PatternGraph(patternGraphID++);
 		PatternNode pn1, pn2;
 		int count = 0;
@@ -114,12 +113,10 @@ public class QueryGenerator {
 				if (n.getEdge(trg) != null) {
 					pn2 = pg.getNode(map.get(trg));
 
-					if (!pn1.getAdjacency().contains(pn2)) {
-						pn1.addEdge(pn2);
+					pn1.addEdge(pn2);
 
-						if (!Config.ISDIRECTED)
-							pn2.addEdge(pn1);
-					}
+					if (!Config.ISDIRECTED)
+						pn2.addEdge(pn1);
 				}
 			}
 		}

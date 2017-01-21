@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ReadResults {
-	private static String mainDir = "/home/ksemer/workspaces/tkde_data/output1/";
+	private static String mainDir = "/home/ksemer/workspaces/tkde_data/output/";
 
 	private static int qsize = 6;
 	private static String rankingDuration = "a";
@@ -20,10 +20,20 @@ public class ReadResults {
 
 	public static void main(String[] args) throws IOException {
 		// readForConf(mainDir);
-
-		randomResultsRetrieval(mainDir + "prof/");
+		randomResultsRetrieval(mainDir + "dblp_pub_random_topk");
 		// resultsRetrieval(mainDir + "most_durable/begin/", 1, 5);
+		// resultsRetrieval(mainDir + "most_durable/junior/", 1, 5);
+		// resultsRetrieval(mainDir + "most_durable/senior/", 1, 5);
+		// resultsRetrieval(mainDir + "most_durable/prof/", 1, 5);
+		// resultsRetrieval(mainDir + "most_durable/most/", 1, 5);
+		// resultsRetrieval(mainDir + "most_durable/least/", 1, 5);
+
 		// resultsRetrieval(mainDir + "topk/begin/", 1, 5);
+		// resultsRetrieval(mainDir + "topk/junior/", 1, 5);
+		// resultsRetrieval(mainDir + "topk/senior/", 1, 5);
+		// resultsRetrieval(mainDir + "topk/prof/", 1, 5);
+		// resultsRetrieval(mainDir + "topk/most/", 1, 5);
+		// resultsRetrieval(mainDir + "topk/least/", 1, 5);
 	}
 
 	public static void readForConf(String path) throws IOException {
@@ -98,21 +108,17 @@ public class ReadResults {
 				size = res.get(3);
 
 				if (name.contains("tila")) {
-
 					vila[size - 1] += time;
 					vila_c[size - 1]++;
 				} else if (name.contains("tipla")) {
-
 					tipla[size - 1] += time;
 					tipla_c[size - 1]++;
 				} else if (name.contains("ctinla(1)")) {
 					ctinla1[size - 1] += time;
 					ctinla1_c[size - 1]++;
 				} else if (name.contains("ctinla(2)")) {
-
 					ctinla2[size - 1] += time;
 					ctinla2_c[size - 1]++;
-
 				} else if (name.contains("tinla(1)")) {
 					tinla1[size - 1] += time;
 					tinla1_c[size - 1]++;
@@ -129,6 +135,7 @@ public class ReadResults {
 					+ (tinla2[i] / tinla2_c[i]) + "\t" + (ctinla1[i] / ctinla1_c[i]) + "\t"
 					+ (ctinla2[i] / ctinla2_c[i]) + "\t" + (tipla[i] / tipla_c[i]));
 		}
+
 	}
 
 	public static void resultsRetrieval(String file, int st, int end) throws IOException {
@@ -184,9 +191,7 @@ public class ReadResults {
 			} else if (line.contains("pg_id")) {
 				token = line.split(":");
 				size = Integer.parseInt(token[1].trim());
-			} else if (line.contains("--->") || line.contains("No matches")) {
-				if (line.contains("No matches"))
-					result.add(0);
+			} else if (line.contains("--->")) {
 				result.add(size + 1);
 				break;
 			}
