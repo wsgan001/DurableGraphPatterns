@@ -7,8 +7,12 @@ import graph.version.loader.LoaderProteins;
 import graph.version.loader.LoaderYT;
 import system.Config;
 
+/**
+ * Returns the number of nodes and the edges of the given graph
+ * @author ksemer
+ *
+ */
 public class Statistics {
-	public static String dataset = "";
 
 	public static void main(String[] args) throws Exception {
 
@@ -20,17 +24,12 @@ public class Statistics {
 		Config.TIPLA_ENABLED = false;
 		Config.CTINLA_ENABLED = false;
 
-		Config.PATH_DATASET = "/home/ksemer/workspaces/tkde_data/protein/pcms/PCMS.gfu";
-
 		String dataset = Config.PATH_DATASET.toLowerCase();
 		Graph lvg;
 
-		// for dblp dataset
-		if (dataset.contains("dblp")) {
+		if (dataset.contains("dblp")) // for dblp dataset
 			lvg = new LoaderDBLP().loadDataset();
-		}
-		// for yt dataset
-		else if (dataset.contains("yt"))
+		else if (dataset.contains("yt")) // for yt dataset
 			lvg = new LoaderYT().loadDataset();
 		else // for proteins
 			lvg = new LoaderProteins().loadDataset();
