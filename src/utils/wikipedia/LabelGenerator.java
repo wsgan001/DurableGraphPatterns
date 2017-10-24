@@ -1,4 +1,4 @@
-package utils.yt;
+package utils.wikipedia;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -21,10 +21,10 @@ import java.util.TreeMap;
  */
 public class LabelGenerator {
 	// input graph
-	private static String dataset = "/tempweb/files/yt_graph";
+	private static String dataset = "wiki-graph";
 	
 	// path for labels
-	private static String labels_output = "/tempweb/files/yt_label_";
+	private static String labels_output = "wiki-label-";
 	
 	// times that a label will remain the same
 	private static int times = 4;
@@ -55,15 +55,6 @@ public class LabelGenerator {
 		System.out.println("Total nodes: " + nodes.size());
 	
 		createDataset(10);
-		createDataset(20);
-		createDataset(30);
-		createDataset(40);
-		createDataset(50);
-		createDataset(60);
-		createDataset(70);
-		createDataset(80);
-		createDataset(90);
-		createDataset(100);
 	}
 
 	/**
