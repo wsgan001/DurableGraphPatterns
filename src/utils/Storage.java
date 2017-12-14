@@ -16,6 +16,7 @@ import java.io.ObjectOutputStream;
  *
  */
 public class Storage {
+
 	// =================================================================
 	private static final long MEGABYTE = 1024L * 1024L;
 	// =================================================================
@@ -75,7 +76,6 @@ public class Storage {
 	 */
 	public static Object deepClone(Object object) {
 		try {
-			System.out.println("Copying object");
 			ByteArrayOutputStream baos = new ByteArrayOutputStream();
 			ObjectOutputStream oos = new ObjectOutputStream(baos);
 			oos.writeObject(object);
@@ -84,7 +84,6 @@ public class Storage {
 			baos.close();
 			ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 			ObjectInputStream ois = new ObjectInputStream(bais);
-			System.out.println("Copying object finished");
 			return ois.readObject();
 		} catch (Exception e) {
 			e.printStackTrace();

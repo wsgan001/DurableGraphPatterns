@@ -1,8 +1,10 @@
 package utils;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -97,33 +99,38 @@ public class QueryGenerator {
 
 		PatternGraph pg = new PatternGraph(patternGraphID++);
 		PatternNode pn1, pn2;
-		int count = 0;
-		Map<Node, Integer> map = new HashMap<>();
+		List<Node> nodes = new ArrayList<>(hasBeenVisited);
 
-		for (Node n : hasBeenVisited) {
-			pg.addNode(count, labels.get(n));
-			map.put(n, count);
-			count++;
+		for (int i = 0; i < nodes.size(); i++) {
+			pg.addNode(i, labels.get(nodes.get(i)));
 		}
 
-		for (Node n : hasBeenVisited) {
+		System.out.println("Pattern graph id: " + pg.getID());
 
-			pn1 = pg.getNode(map.get(n));
+		for (int i = 0; i < nodes.size(); i++) {
+			pn1 = pg.getNode(i);
 
-			for (Node trg : hasBeenVisited) {
-				if (n.getEdge(trg) != null) {
-					pn2 = pg.getNode(map.get(trg));
+			for (int j = i + 1; j < nodes.size(); j++) {
+
+				if (nodes.get(i).getEdge(nodes.get(j)) != null) {
+					pn2 = pg.getNode(j);
 
 					if (!pn1.getAdjacency().contains(pn2)) {
 						pn1.addEdge(pn2);
 
-						if (!Config.ISDIRECTED)
+						if (!Config.ISDIRECTED) {
 							pn2.addEdge(pn1);
+							System.out.println(pn1.getID() + " (" + pn1.getLabel() + ") <--> " + pn2.getID() + " ("
+									+ pn2.getLabel() + ")");
+						} else
+							System.out.println(pn1.getID() + " (" + pn1.getLabel() + ") --> " + pn2.getID() + " ("
+									+ pn2.getLabel() + ")");
 					}
 				}
 			}
 		}
 
+		System.out.println("---------------------");
 		return pg;
 	}
 }

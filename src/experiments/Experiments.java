@@ -1,6 +1,7 @@
 package experiments;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -10,18 +11,22 @@ import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import algorithm.DurableMatching;
 import algorithm.DurableTopkMatching;
 import graph.pattern.PatternGraph;
+import graph.pattern.PatternNode;
 import graph.version.Graph;
 import graph.version.Node;
 import graph.version.loader.LoaderDBLP;
 import graph.version.loader.LoaderProteins;
 import graph.version.loader.LoaderRandom;
+import graph.version.loader.LoaderWikipedia;
 import graph.version.loader.LoaderYT;
 import system.Config;
 import utils.QueryGenerator;
+import utils.Storage;
 
 /**
  * Experiment class
@@ -32,12 +37,7 @@ public class Experiments {
 	private static String out;
 	public static boolean runRandomQueries = true;
 	private static boolean randomDataset = false;
-	private static int randomIterations = 18;
-	// only used in random queries and the division with randomIterations should
-	// be zero
-	private static int NUMBER_OF_THREADS = 6;
-	private static boolean runTopk = true;
-	private static boolean runMost = false;
+	private static int randomIterations = 20;
 	private static List<PatternGraph> queries = new ArrayList<>();
 	private static int randomDatasetInterval;
 
@@ -65,7 +65,7 @@ public class Experiments {
 				if (!runRandomQueries)
 					runIndex();
 				else
-					runRandomIndex();
+					runRandomIndex("");
 				System.out.println("-----------");
 			}
 			return;
@@ -73,41 +73,87 @@ public class Experiments {
 
 		if (!runRandomQueries)
 			runIndex();
-		else
-			runRandomIndex();
+		else {
+			if (Config.PATH_DATASET.toLowerCase().contains("dblp")) {
+				runRandomIndex("dblp");
+			} else if (Config.PATH_DATASET.toLowerCase().contains("yt")) {
+				runRandomIndex("yt");
+			} else if (Config.PATH_DATASET.toLowerCase().contains("wiki")) {
+				runRandomIndex("wiki");
+			} else
+				runRandomIndex("");
+		}
 	}
 
-	private static void runRandomIndex() throws Exception {
-		Config.TINLA_ENABLED = false;
-		Config.CTINLA_ENABLED = false;
-		Config.TIPLA_ENABLED = false;
+	@SuppressWarnings("unchecked")
+	private static void runRandomIndex(String name) throws Exception {
 
-		Graph lvg = loadGraph();
-		List<Node> allNodes = new ArrayList<>(lvg.getNodes());
-		Random r = new Random();
+		File f = new File(Config.PATH_OBJECT + name);
 
-		for (int i = 0; i < randomIterations; i++) {
-			PatternGraph pg = null;
-			System.out.println("Query generation iteration: " + (i + 1));
+		if (f.exists()) {
+			
+			queries = (List<PatternGraph>) Storage.deserialize(Config.PATH_OBJECT + name);
+			System.out.println("Queries have been loaded");
+			PatternGraph pg;
+			PatternNode pn1, pn2;
 
-			for (int size = 2; size <= 6; size++) {
+			for (int i = 0; i < queries.size(); i++) {
+				pg = queries.get(i);
 
-				int j = r.nextInt(lvg.size() - 1);
-				Node node = allNodes.get(j);
+				System.out.println("Pattern graph id: " + pg.getID());
 
-				if (QueryGenerator.dfs(node, size)) {
-					// get random query as a pattern graph
-					pg = QueryGenerator.getQuery(size);
-					queries.add(pg);
-				} else
-					size--;
+				for (int j = 0; j < pg.getNodes().size(); j++) {
+					pn1 = pg.getNode(j);
+
+					for (int k = j + 1; k < pg.getNodes().size(); k++) {
+						pn2 = pg.getNodes().get(k);
+
+						if (pn1.getAdjacency().contains(pn2)) {
+							if (!Config.ISDIRECTED) {
+								System.out.println(pn1.getID() + " (" + pn1.getLabel() + ") <--> " + pn2.getID() + " ("
+										+ pn2.getLabel() + ")");
+							} else
+								System.out.println(pn1.getID() + " (" + pn1.getLabel() + ") --> " + pn2.getID() + " ("
+										+ pn2.getLabel() + ")");
+						}
+					}
+				}
 			}
+		} else {
+
+			Config.TINLA_ENABLED = false;
+			Config.CTINLA_ENABLED = false;
+			Config.TIPLA_ENABLED = false;
+
+			Graph lvg = loadGraph();
+			List<Node> allNodes = new ArrayList<>(lvg.getNodes());
+			Random r = new Random();
+
+			for (int i = 0; i < randomIterations; i++) {
+				PatternGraph pg = null;
+				System.out.println("Query generation iteration: " + (i + 1));
+
+				for (int size = 2; size <= 6; size++) {
+
+					int j = r.nextInt(lvg.size() - 1);
+					Node node = allNodes.get(j);
+
+					if (QueryGenerator.dfs(node, size)) {
+						// get random query as a pattern graph
+						pg = QueryGenerator.getQuery(size);
+						queries.add(pg);
+					} else
+						size--;
+				}
+			}
+
+			lvg.getNodes().clear();
+			lvg = null;
+			System.gc();
+			System.out.println("Queries Generation has finished!!!");
+			Storage.serialize(queries, Config.PATH_OBJECT + name);
 		}
 
-		lvg.getNodes().clear();
-		lvg = null;
-		System.gc();
-		System.out.println("Queries Generation is finished!!!");
 		runIndex();
 	}
 
@@ -144,54 +190,21 @@ public class Experiments {
 		Config.TIPLA_ENABLED = true;
 
 		runQ();
+		
+		Config.TINLA_ENABLED = true;
+		Config.CTINLA_ENABLED = false;
+		Config.TIPLA_ENABLED = true;
+
+		runQ();
 	}
 
-	private static Graph loadGraph() throws Exception {
+	private static void runQ() throws Exception {
 		String dataset = Config.PATH_DATASET.toLowerCase();
-		Graph lvg = null;
 
-		// for dblp dataset
-		if (dataset.contains("dblp")) {
-			Config.MAXIMUM_INTERVAL = 58;
-			lvg = new LoaderDBLP().loadDataset();
-		} else if (dataset.contains("yt")) { // youtube
-			Config.MAXIMUM_INTERVAL = 37;
-			lvg = new LoaderYT().loadDataset();
-		} else if (dataset.contains("random")) {
-			Config.MAXIMUM_INTERVAL = randomDatasetInterval;
-			lvg = new LoaderRandom().loadDataset();
-		} else {
-			// proteins
-			lvg = new LoaderProteins().loadDataset();
-		}
-
-		return lvg;
-	}
-
-	public static void runQ() throws Exception {
 		Graph lvg = loadGraph();
 
-		for (int i = 10; i <= 50; i += 10) {
-			Config.K = i;
-
-			if (runTopk)
-				runQ(lvg, true, false);
-		}
-
-		if (runMost)
-			runQ(lvg, false, true);
-	}
-
-	public static void runQ(Graph lvg, boolean runTop, boolean runMost) throws Exception {
-		String dataset = Config.PATH_DATASET.toLowerCase();
-		Config.RUN_TOPK_QUERIES = runTop;
-		Config.RUN_DURABLE_QUERIES = runMost;
-
 		// for dblp dataset
 		if (dataset.contains("dblp")) {
-
-			Config.MAX_RANKING_ENABLED = true;
-			Config.MAXBINARY_RANKING_ENABLED = false;
 
 			if (runRandomQueries)
 				run_random(lvg, "dblp");
@@ -201,10 +214,6 @@ public class Experiments {
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_junior.txt", "junior");
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_begin.txt", "begin");
 			}
-
-			Config.MAX_RANKING_ENABLED = false;
-			// FIXME
-			Config.MAXBINARY_RANKING_ENABLED = true;
 
 			if (runRandomQueries)
 				run_random(lvg, "dblp");
@@ -216,18 +225,12 @@ public class Experiments {
 			}
 		} else if (dataset.contains("yt")) { // youtube
 
-			Config.MAX_RANKING_ENABLED = true;
-			Config.MAXBINARY_RANKING_ENABLED = false;
-
 			if (runRandomQueries)
 				run_random(lvg, "yt");
 			else {
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least.txt", "least");
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
 			}
-
-			Config.MAX_RANKING_ENABLED = false;
-			Config.MAXBINARY_RANKING_ENABLED = true;
 
 			if (runRandomQueries)
 				run_random(lvg, "yt");
@@ -236,18 +239,12 @@ public class Experiments {
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most.txt", "most");
 			}
 		} else if (dataset.contains("random")) {
-			Config.MAX_RANKING_ENABLED = false;
-			Config.MAXBINARY_RANKING_ENABLED = false;
-
 			if (runRandomQueries)
 				run_random(lvg, "random");
 			else {
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_least_rand.txt", "least");
 				run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_most_rand.txt", "most");
 			}
-
-			Config.MAX_RANKING_ENABLED = false;
-			Config.MAXBINARY_RANKING_ENABLED = true;
 
 			if (runRandomQueries)
 				run_random(lvg, "random");
@@ -260,10 +257,6 @@ public class Experiments {
 			String[] x = dataset.split("/");
 			String dataName = x[x.length - 1].replace(".gfu", "");
 
-			Config.MAX_RANKING_ENABLED = false;
-			Config.MAXBINARY_RANKING_ENABLED = false;
-			// FIXME remove
-			Config.MIN_RANKING_ENABLED = true;
 			// run(lvg, "/home/ksemer/workspaces/tkde_data/queries/queries_" +
 			// dataName + ".txt", dataName);
 
@@ -290,16 +283,16 @@ public class Experiments {
 
 		iQ = new BitSet(Config.MAXIMUM_INTERVAL);
 		iQ.set(0, Config.MAXIMUM_INTERVAL, true);
+
 		String[] edge;
 		PatternGraph pg = null;
 		String line = null;
 		boolean nodes = false;
 		int sizeOfNodes = 0, id = 0, n1, n2;
 
-		ExecutorService executor = Executors.newCachedThreadPool();
-		List<Callable<?>> callables = new ArrayList<>();
+		ExecutorService executor = Executors.newFixedThreadPool(Config.THREADS);
 
-		BufferedReader br = new BufferedReader(new FileReader(queryInput));
+		BufferedReader br = new BufferedReader(new FileReader(Config.PATH_QUERY));
 
 		while ((line = br.readLine()) != null) {
 
@@ -308,25 +301,25 @@ public class Experiments {
 				if (Config.RUN_DURABLE_QUERIES) {
 
 					if (Config.MAX_RANKING_ENABLED)
-						callables.add(setCallableDurQ(lvg, pg, iQ, Config.MAX_RANKING));
+						executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAX_RANKING));
 
 					if (Config.MAXBINARY_RANKING_ENABLED)
-						callables.add(setCallableDurQ(lvg, pg, iQ, Config.MAXBINARY_RANKING));
+						executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAXBINARY_RANKING));
 
 					if (Config.MIN_RANKING_ENABLED)
-						callables.add(setCallableDurQ(lvg, pg, iQ, Config.MIN_RANKING));
+						executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MIN_RANKING));
 				}
 
 				if (Config.RUN_TOPK_QUERIES) {
 
 					if (Config.MAX_RANKING_ENABLED)
-						callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MAX_RANKING));
+						executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAX_RANKING));
 
 					if (Config.MAXBINARY_RANKING_ENABLED)
-						callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MAXBINARY_RANKING));
+						executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAXBINARY_RANKING));
 
 					if (Config.MIN_RANKING_ENABLED)
-						callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MIN_RANKING));
+						executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MIN_RANKING));
 				}
 			} else if (line.contains("#")) {
 
@@ -365,34 +358,24 @@ public class Experiments {
 		}
 		br.close();
 
-		for (Callable<?> c : callables)
-			executor.submit(c);
-
 		executor.shutdown();
 
 		while (!executor.isTerminated()) {
+			executor.awaitTermination(60, TimeUnit.SECONDS);
 		}
 
-		System.out.println("-----------------");
-		executor.shutdownNow();
-		// System.out.println("shutdown finished");
 		lvg = null;
-
-		Runtime runtime = Runtime.getRuntime();
-
-		// Run the garbage collector
-		runtime.gc();
 	}
 
 	private static void run_random(Graph lvg, String outputPr) throws Exception {
+		
 		PatternGraph pg = null;
 		BitSet iQ = new BitSet(Config.MAXIMUM_INTERVAL);
 		Config.PATH_OUTPUT = out + outputPr + "/";
 
 		iQ.set(0, Config.MAXIMUM_INTERVAL, true);
 
-		List<Callable<?>> callables = new ArrayList<>();
-		ExecutorService executor = Executors.newCachedThreadPool();
+		ExecutorService executor = Executors.newFixedThreadPool(Config.THREADS);
 
 		for (int i = 0; i < queries.size(); i++) {
 			pg = queries.get(i);
@@ -400,54 +383,39 @@ public class Experiments {
 			if (Config.RUN_DURABLE_QUERIES) {
 
 				if (Config.MAX_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.MAX_RANKING));
+					executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAX_RANKING));
 
 				if (Config.MAXBINARY_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.MAXBINARY_RANKING));
+					executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAXBINARY_RANKING));
 
 				if (Config.MIN_RANKING_ENABLED)
-					callables.add(setCallableDurQ(lvg, pg, iQ, Config.MIN_RANKING));
+					executor.submit(setCallableDurQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MIN_RANKING));
 			}
 
 			if (Config.RUN_TOPK_QUERIES) {
 
 				if (Config.MAX_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MAX_RANKING));
+					executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAX_RANKING));
 
 				if (Config.MAXBINARY_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MAXBINARY_RANKING));
+					executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MAXBINARY_RANKING));
 
 				if (Config.MIN_RANKING_ENABLED)
-					callables.add(setCallableTopkQ(lvg, pg, iQ, Config.MIN_RANKING));
-			}
-
-			// use 5 threads
-			if (callables.size() == NUMBER_OF_THREADS) {
-				for (Callable<?> c : callables)
-					executor.submit(c);
-
-				executor.shutdown();
-
-				while (!executor.isTerminated()) {
-				}
-
-				executor = Executors.newCachedThreadPool();
-				callables.clear();
+					executor.submit(setCallableTopkQ(lvg, (PatternGraph) Storage.deepClone(pg), iQ, Config.MIN_RANKING));
 			}
 		}
 
 		System.out.println("-----------------");
-		executor.shutdownNow();
-		// System.out.println("shutdown finished");
+		executor.shutdown();
+
+		while (!executor.isTerminated()) {
+			executor.awaitTermination(60, TimeUnit.SECONDS);
+		}
+
 		lvg = null;
-
-		Runtime runtime = Runtime.getRuntime();
-
-		// Run the garbage collector
-		runtime.gc();
 	}
 
-	public static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
+	private static void run_for_proteins(Graph lvg, String outputPr) throws Exception {
 
 		for (Entry<String, Integer> entry : LoaderProteins.labels.entrySet()) {
 			int label = entry.getValue();
@@ -562,5 +530,27 @@ public class Experiments {
 			return true;
 		};
 		return c;
+	}
+
+	private static Graph loadGraph() throws Exception {
+		String dataset = Config.PATH_DATASET.toLowerCase();
+		Graph lvg = null;
+
+		// for dblp dataset
+		if (dataset.contains("dblp")) {
+			lvg = new LoaderDBLP().loadDataset();
+		} else if (dataset.contains("yt")) { // youtube
+			lvg = new LoaderYT().loadDataset();
+		} else if (dataset.contains("random")) {
+			Config.MAXIMUM_INTERVAL = randomDatasetInterval;
+			lvg = new LoaderRandom().loadDataset();
+		} else if (dataset.contains("wiki")) {
+			lvg = new LoaderWikipedia().loadDataset();
+		} else {
+			// proteins
+			lvg = new LoaderProteins().loadDataset();
+		}
+
+		return lvg;
 	}
 }
