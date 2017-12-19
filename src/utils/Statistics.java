@@ -18,8 +18,6 @@ public class Statistics {
 
 		Config.loadConfigs();
 
-		Config.STORE_OBJECT = false;
-		Config.LOAD_OBJECT = false;
 		Config.TINLA_ENABLED = false;
 		Config.TIPLA_ENABLED = false;
 		Config.CTINLA_ENABLED = false;
